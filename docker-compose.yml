@@ -1,0 +1,76 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Your_password123"
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P $$MSSQL_SA_PASSWORD -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  sql-data-service:
+    build:
+      context: .
+      dockerfile: services/sql-data-service/Dockerfile
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__SqlServer: "Server=sqlserver;Database=LandaHome;User Id=sa;Password=Your_password123;TrustServerCertificate=True;"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    ports:
+      - "5002:8080"
+
+  rest-api:
+    build:
+      context: .
+      dockerfile: services/rest-api/Dockerfile
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      Redis__ConnectionString: "redis:6379"
+      RabbitMq__HostName: "rabbitmq"
+      Grpc__SqlDataServiceAddress: "http://sql-data-service:8080"
+    depends_on:
+      - redis
+      - rabbitmq
+      - sql-data-service
+    ports:
+      - "5001:8080"
+
+  telemetry-service:
+    build:
+      context: .
+      dockerfile: services/telemetry-service/Dockerfile
+    environment:
+      Redis__ConnectionString: "redis:6379"
+      RabbitMq__HostName: "rabbitmq"
+    depends_on:
+      - redis
+      - rabbitmq
+
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+    environment:
+      VITE_REST_API_BASE_URL: "http://localhost:5001"
+    depends_on:
+      - rest-api
+    ports:
+      - "5173:5173"
+

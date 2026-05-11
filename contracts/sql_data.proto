@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package landa.sql;
+
+option csharp_namespace = "Landa.SqlData.Contracts";
+
+// gRPC contract between rest-api (client) and sql-data-service (server).
+service SqlDataService {
+  rpc ListSensors (ListSensorsRequest) returns (ListSensorsResponse);
+  rpc UpsertSensors (UpsertSensorsRequest) returns (UpsertSensorsResponse);
+}
+
+message Sensor {
+  string id = 1;           // e.g. "sensor-01"
+  string display_name = 2; // human-friendly name
+  string location = 3;     // optional
+}
+
+message ListSensorsRequest {}
+
+message ListSensorsResponse {
+  repeated Sensor sensors = 1;
+}
+
+message UpsertSensorsRequest {
+  repeated Sensor sensors = 1;
+}
+
+message UpsertSensorsResponse {
+  int32 upserted_count = 1;
+}
+

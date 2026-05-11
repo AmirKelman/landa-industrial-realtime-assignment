@@ -1,0 +1,27 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Node / UI
+node_modules/
+dist/
+build/
+.next/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.pdb
+
+# Logs
+*.log
+
+# Secrets
+*.env
+*.env.*
+
