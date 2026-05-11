@@ -29,6 +29,7 @@ services:
       dockerfile: services/sql-data-service/Dockerfile
     environment:
       ASPNETCORE_URLS: "http://+:8080"
+      Kestrel__EndpointDefaults__Protocols: "Http2"
       ConnectionStrings__SqlServer: "Server=sqlserver;Database=LandaHome;User Id=sa;Password=Your_password123;TrustServerCertificate=True;"
     depends_on:
       sqlserver:
