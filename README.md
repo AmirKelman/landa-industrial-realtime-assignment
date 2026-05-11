@@ -27,13 +27,54 @@ The system consists of:
 
 ## How to run (detailed)
 
-TODO (Stage 2+): include exact ports, URLs, default credentials, and health checks.
+Prerequisites: Docker Desktop with Compose v2.
+
+```bash
+docker compose up --build
+```
+
+Service endpoints once the stack is healthy:
+
+| Service | URL | Notes |
+|---|---|---|
+| UI | http://localhost:5173 | React app, 3 pages |
+| REST API health | http://localhost:5001/health | `{"status":"ok"}` |
+| REST API sensors | http://localhost:5001/sensors | Returns all 20 sensors from SQL via gRPC |
+| SignalR hub | http://localhost:5001/hubs/telemetry | WebSocket, used by the UI |
+| RabbitMQ management | http://localhost:15672 | `guest` / `guest` |
+| SQL Server | localhost:1433 | `sa` / `Your_password123`, DB: `LandaHome` |
+| Redis | localhost:6379 | No auth |
+
+To stop and remove all volumes:
+
+```bash
+docker compose down -v
+```
 
 ## How to test
 
-TODO (Stage 7+):
-- Unit tests for all backend services
-- Integration tests validating end-to-end real-time flow for all 20 sensors
+**Unit tests** (no running stack required):
+
+```bash
+dotnet test services/sql-data-service/tests -c Release
+dotnet test services/telemetry-service/tests -c Release
+dotnet test services/rest-api/tests -c Release
+```
+
+**Integration tests** (requires the full stack to be running):
+
+```bash
+# Start the stack first
+docker compose up -d --build
+
+# Run end-to-end tests (validates real-time flow for all 20 sensors via SignalR)
+dotnet test tests/integration -c Release
+
+# Or set a custom API URL if needed
+REST_API_BASE_URL=http://localhost:5001 dotnet test tests/integration -c Release
+```
+
+CI runs all of the above automatically on every push (see `.github/workflows/ci.yml`).
 
 ## Architecture explanation (mandatory)
 

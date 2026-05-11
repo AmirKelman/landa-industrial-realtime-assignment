@@ -21,14 +21,31 @@ var app = builder.Build();
 await using (var scope = app.Services.CreateAsyncScope())
 {
   var db = scope.ServiceProvider.GetRequiredService<SqlDataDbContext>();
-  // Stage 3: keep DB init simple. We'll switch to migrations once schema stabilizes.
   await db.Database.EnsureCreatedAsync();
+  await SeedSensorsAsync(db);
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "sql-data-service" }));
 app.MapGrpcService<SqlDataGrpcService>();
 
 app.Run();
+
+static async Task SeedSensorsAsync(SqlDataDbContext db)
+{
+  if (await db.Sensors.AnyAsync())
+    return;
+
+  for (var i = 1; i <= 20; i++)
+  {
+    db.Sensors.Add(new SensorEntity
+    {
+      Id = $"sensor-{i:00}",
+      DisplayName = $"Sensor {i:00}",
+      Location = $"Zone-{((i - 1) / 5) + 1}"
+    });
+  }
+  await db.SaveChangesAsync();
+}
 
 public sealed class SqlDataGrpcService : Landa.SqlData.Contracts.SqlDataService.SqlDataServiceBase
 {
